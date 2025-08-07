@@ -37,6 +37,8 @@ uint32_t hard_rem(uint32_t a, uint32_t b);
 uint32_t hard_remu(uint32_t a, uint32_t b);
 void multest(void);
 
+void lauda(void);
+
 // stats.c
 void stats(void);
 

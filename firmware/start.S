@@ -37,6 +37,7 @@
 	.global hard_rem
 	.global hard_remu
 	.global stats
+	.global lauda
 
 reset_vec:
 	// no more than 16 bytes here !
@@ -375,6 +376,7 @@ start:
 	addi x29, zero, 0
 	addi x30, zero, 0
 	addi x31, zero, 0
+  
 
 #ifdef ENABLE_HELLO
 	/* set stack pointer */
@@ -470,6 +472,7 @@ start:
 #ifdef ENABLE_MULTST
 	/* call multest C code */
 	jal ra,multest
+	jal ra,lauda
 #endif
 
 #ifdef ENABLE_STATS
