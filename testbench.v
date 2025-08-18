@@ -250,7 +250,8 @@ module picorv32_wrapper #(
 	initial begin
 		if (!$value$plusargs("firmware=%s", firmware_file))
 			firmware_file = "firmware/firmware.hex";
-		$readmemh(firmware_file, mem.memory);
+		// Change it to this:
+			$readmemh(firmware_file, mem.memory, 0, 32767);
 	end
 
 	integer cycle_counter;

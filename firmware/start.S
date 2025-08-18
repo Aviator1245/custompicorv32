@@ -344,9 +344,9 @@ irq_stack:
 
 start:
 	/* zero-initialize all registers */
+	lui sp, (128*1024)>>12
 
 	addi x1, zero, 0
-	addi x2, zero, 0
 	addi x3, zero, 0
 	addi x4, zero, 0
 	addi x5, zero, 0
@@ -380,10 +380,11 @@ start:
 
 #ifdef ENABLE_HELLO
 	/* set stack pointer */
-	lui sp,(128*1024)>>12
+	
 
 	/* call hello C code */
 	jal ra,hello
+	jal ra,lauda
 #endif
 
 	/* running tests from riscv-tests */
@@ -464,16 +465,6 @@ start:
 	addi gp, gp, %lo(0xdeadbeef)
 	addi tp, gp, 0
 
-#ifdef ENABLE_SIEVE
-	/* call sieve C code */
-	jal ra,sieve
-#endif
-
-#ifdef ENABLE_MULTST
-	/* call multest C code */
-	jal ra,multest
-	jal ra,lauda
-#endif
 
 #ifdef ENABLE_STATS
 	/* call stats C code */

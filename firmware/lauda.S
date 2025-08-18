@@ -1,67 +1,45 @@
-/*
- * This is the minimized version of lauda.S
- */
-
 .section .text
 .global lauda
 
-# Custom instruction macro
-.macro maddsq rd, rs1, rs2
-    .insn r 0x0B, 0x1, 0x21, \rd, \rs1, \rs2
+// Macro for the custom LFSR instruction
+.macro lfsr rd, rs1
+    .insn r 0x0b, 0, 0x01, \rd, \rs1, x0
 .endm
 
 lauda:
-    # Set up input values
-    li x5, 10
-    li x6, 5
+    # Save registers that we will modify (make space for s1)
+    addi sp, sp, -20
+    sw   ra, 16(sp)
+    sw   s0, 12(sp)
+    sw   s1, 8(sp)      # Save s1
+    sw   t0, 4(sp)
+    sw   t1, 0(sp)
 
-    # Call your custom instruction
-    maddsq x7, x5, x6
+    # Test 1: Generate and print a sequence of LFSR values
+    lfsr s0, x0
+    mv   a0, s0
+    jal  ra, print_dec
+    li   a0, '\n'
+    jal  ra, print_chr
 
-    # Print the "Result of custom instruction: " string
-    li a0, 'R'; jal ra, print_chr
-    li a0, 'e'; jal ra, print_chr
-    li a0, 's'; jal ra, print_chr
-    li a0, 'u'; jal ra, print_chr
-    li a0, 'l'; jal ra, print_chr
-    li a0, 't'; jal ra, print_chr
-    li a0, ' '; jal ra, print_chr
-    li a0, 'o'; jal ra, print_chr
-    li a0, 'f'; jal ra, print_chr
-    li a0, ' '; jal ra, print_chr
-    li a0, 'c'; jal ra, print_chr
-    li a0, 'u'; jal ra, print_chr
-    li a0, 's'; jal ra, print_chr
-    li a0, 't'; jal ra, print_chr
-    li a0, 'o'; jal ra, print_chr
-    li a0, 'm'; jal ra, print_chr
-    li a0, ' '; jal ra, print_chr
-    li a0, 'i'; jal ra, print_chr
-    li a0, 'n'; jal ra, print_chr
-    li a0, 's'; jal ra, print_chr
-    li a0, 't'; jal ra, print_chr
-    li a0, 'r'; jal ra, print_chr
-    li a0, 'u'; jal ra, print_chr
-    li a0, 'c'; jal ra, print_chr
-    li a0, 't'; jal ra, print_chr
-    li a0, 'i'; jal ra, print_chr
-    li a0, 'o'; jal ra, print_chr
-    li a0, 'n'; jal ra, print_chr
-    li a0, ':'; jal ra, print_chr
-    li a0, ' '; jal ra, print_chr
-    
-    # Print the result of the custom instruction
-    mv a0, x7
-    jal ra, print_dec
+    # Use s1 for the loop counter
+    li   s1, 12
+loop_lfsr_gen:
+    lfsr s0, x0
+    mv   a0, s0
+    jal  ra, print_dec    # s1 will now survive this call
+    li   a0, '\n'
+    jal  ra, print_chr
+    addi s1, s1, -1
+    bnez s1, loop_lfsr_gen
 
-    li a0, '\n'
-    jal ra, print_chr
+    # ... the rest of your code ...
 
-    # Write the success code to the testbench
-    li a0, 0x20000000
-    li a1, 123456789
-    sw a1, 0(a0)
-
-    # Terminate the simulation
-    ebreak
-
+    # Restore registers
+    lw   ra, 16(sp)
+    lw   s0, 12(sp)
+    lw   s1, 8(sp)      # Restore s1
+    lw   t0, 4(sp)
+    lw   t1, 0(sp)
+    addi sp, sp, 20
+    ret

@@ -1,26 +1,4 @@
-/*
- *  PicoRV32 -- A Small RISC-V (RV32I) Processor Core
- *
- *  Copyright (C) 2015  Claire Xenia Wolf <claire@yosyshq.com>
- *
- *  Permission to use, copy, modify, and/or distribute this software for any
- *  purpose with or without fee is hereby granted, provided that the above
- *  copyright notice and this permission notice appear in all copies.
- *
- *  THE SOFTWARE IS PROVIDED "AS IS" AND THE AUTHOR DISCLAIMS ALL WARRANTIES
- *  WITH REGARD TO THIS SOFTWARE INCLUDING ALL IMPLIED WARRANTIES OF
- *  MERCHANTABILITY AND FITNESS. IN NO EVENT SHALL THE AUTHOR BE LIABLE FOR
- *  ANY SPECIAL, DIRECT, INDIRECT, OR CONSEQUENTIAL DAMAGES OR ANY DAMAGES
- *  WHATSOEVER RESULTING FROM LOSS OF USE, DATA OR PROFITS, WHETHER IN AN
- *  ACTION OF CONTRACT, NEGLIGENCE OR OTHER TORTIOUS ACTION, ARISING OUT OF
- *  OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
- *
- */
 
-/* verilator lint_off WIDTH */
-/* verilator lint_off PINMISSING */
-/* verilator lint_off CASEOVERLAP */
-/* verilator lint_off CASEINCOMPLETE */
 
 `timescale 1 ns / 1 ps
 // `default_nettype none
@@ -72,7 +50,7 @@ module picorv32 #(
 	parameter [ 0:0] COMPRESSED_ISA = 0,
 	parameter [ 0:0] CATCH_MISALIGN = 1,
 	parameter [ 0:0] CATCH_ILLINSN = 1,
-	parameter [ 0:0] ENABLE_PCPI = 0,
+	parameter [ 0:0] ENABLE_PCPI = 1,
 	parameter [ 0:0] ENABLE_MUL = 0,
 	parameter [ 0:0] ENABLE_FAST_MUL = 0,
 	parameter [ 0:0] ENABLE_DIV = 0,
@@ -85,7 +63,8 @@ module picorv32 #(
 	parameter [31:0] LATCHED_IRQ = 32'h ffff_ffff,
 	parameter [31:0] PROGADDR_RESET = 32'h 0000_0000,
 	parameter [31:0] PROGADDR_IRQ = 32'h 0000_0010,
-	parameter [31:0] STACKADDR = 32'h ffff_ffff
+	parameter [31:0] STACKADDR = 32'h ffff_ffff,
+	parameter [ 0:0] ENABLE_LFSR = 1
 ) (
 	input clk, resetn,
 	output reg trap,
@@ -166,7 +145,7 @@ module picorv32 #(
 	localparam integer regfile_size = (ENABLE_REGS_16_31 ? 32 : 16) + 4*ENABLE_IRQ*ENABLE_IRQ_QREGS;
 	localparam integer regindex_bits = (ENABLE_REGS_16_31 ? 5 : 4) + ENABLE_IRQ*ENABLE_IRQ_QREGS;
 
-	localparam WITH_PCPI = ENABLE_PCPI || ENABLE_MUL || ENABLE_FAST_MUL || ENABLE_DIV;
+	localparam WITH_PCPI = ENABLE_PCPI || ENABLE_MUL || ENABLE_FAST_MUL || ENABLE_DIV || ENABLE_LFSR;
 
 	localparam [35:0] TRACE_BRANCH = {4'b 0001, 32'b 0};
 	localparam [35:0] TRACE_ADDR   = {4'b 0010, 32'b 0};
@@ -263,6 +242,13 @@ module picorv32 #(
 	wire [31:0] pcpi_div_rd;
 	wire        pcpi_div_wait;
 	wire        pcpi_div_ready;
+	
+
+	wire pcpi_lfsr_wr;
+	wire [31:0] pcpi_lfsr_rd;
+	wire pcpi_lfsr_wait;
+	wire pcpi_lfsr_ready;
+
 
 	reg        pcpi_int_wr;
 	reg [31:0] pcpi_int_rd;
@@ -321,12 +307,26 @@ module picorv32 #(
 		assign pcpi_div_wait = 0;
 		assign pcpi_div_ready = 0;
 	end endgenerate
+	generate
+		picorv32_pcpi_lfsr pcpi_lfsr (
+			.clk(clk),
+			.resetn(resetn),
+			.pcpi_valid(pcpi_valid),
+			.pcpi_insn(pcpi_insn),
+			.pcpi_rs1(pcpi_rs1),
+			.pcpi_rs2(pcpi_rs2),
+			.pcpi_wr(pcpi_lfsr_wr),
+			.pcpi_rd(pcpi_lfsr_rd),
+			.pcpi_wait(pcpi_lfsr_wait),
+			.pcpi_ready(pcpi_lfsr_ready)
+		);
+	endgenerate
 
 	always @* begin
 		pcpi_int_wr = 0;
 		pcpi_int_rd = 32'bx;
-		pcpi_int_wait  = |{ENABLE_PCPI && pcpi_wait,  (ENABLE_MUL || ENABLE_FAST_MUL) && pcpi_mul_wait,  ENABLE_DIV && pcpi_div_wait};
-		pcpi_int_ready = |{ENABLE_PCPI && pcpi_ready, (ENABLE_MUL || ENABLE_FAST_MUL) && pcpi_mul_ready, ENABLE_DIV && pcpi_div_ready};
+		pcpi_int_wait  = |{ENABLE_PCPI && pcpi_wait,  (ENABLE_MUL || ENABLE_FAST_MUL) && pcpi_mul_wait,  ENABLE_DIV && pcpi_div_wait, pcpi_lfsr_wait};
+		pcpi_int_ready = |{ENABLE_PCPI && pcpi_ready, (ENABLE_MUL || ENABLE_FAST_MUL) && pcpi_mul_ready, ENABLE_DIV && pcpi_div_ready, pcpi_lfsr_ready};
 
 		(* parallel_case *)
 		case (1'b1)
@@ -341,6 +341,10 @@ module picorv32 #(
 			ENABLE_DIV && pcpi_div_ready: begin
 				pcpi_int_wr = pcpi_div_wr;
 				pcpi_int_rd = pcpi_div_rd;
+			end
+			pcpi_lfsr_ready: begin
+    				pcpi_int_wr = pcpi_lfsr_wr;
+    				pcpi_int_rd = pcpi_lfsr_rd;
 			end
 		endcase
 	end
@@ -651,6 +655,7 @@ module picorv32 #(
 	reg instr_rdcycle, instr_rdcycleh, instr_rdinstr, instr_rdinstrh, instr_ecall_ebreak, instr_fence;
 	reg instr_getq, instr_setq, instr_retirq, instr_maskirq, instr_waitirq, instr_timer;
 	reg instr_maddsq;
+	reg instr_lfsr;
 	
 	wire instr_trap;
 
@@ -1079,6 +1084,7 @@ module picorv32 #(
 			instr_and   <= is_alu_reg_reg && mem_rdata_q[14:12] == 3'b111 && mem_rdata_q[31:25] == 7'b0000000;
 
 			instr_maddsq  <= mem_rdata_q[6:0] == 7'b0001011 && mem_rdata_q[14:12] == 3'b001 && mem_rdata_q[31:25] == 7'b0100001;
+			instr_lfsr <= mem_rdata_q[6:0] == 7'b0001011 && mem_rdata_q[14:12] == 3'b000 && mem_rdata_q[31:25] == 7'b0000001;
 			
 			instr_rdcycle  <= ((mem_rdata_q[6:0] == 7'b1110011 && mem_rdata_q[31:12] == 'b11000000000000000010) ||
 			                   (mem_rdata_q[6:0] == 7'b1110011 && mem_rdata_q[31:12] == 'b11000000000100000010)) && ENABLE_COUNTERS;
@@ -1588,7 +1594,7 @@ module picorv32 #(
 
 				(* parallel_case *)
 				case (1'b1)
-					(CATCH_ILLINSN || WITH_PCPI) && instr_trap: begin
+					(CATCH_ILLINSN || WITH_PCPI) && (instr_trap || instr_lfsr): begin
 						if (WITH_PCPI) begin
 							`debug($display("LD_RS1: %2d 0x%08x", decoded_rs1, cpuregs_rs1);)
 							reg_op1 <= cpuregs_rs1;
@@ -3052,4 +3058,59 @@ module picorv32_wb #(
 			endcase
 		end
 	end
+endmodule
+
+module picorv32_pcpi_lfsr (
+    input clk,
+    input resetn,
+    input pcpi_valid,
+    input [31:0] pcpi_insn,
+    input [31:0] pcpi_rs1,
+    input [31:0] pcpi_rs2,
+    output reg pcpi_wr,
+    output reg [31:0] pcpi_rd,
+    output reg pcpi_wait,
+    output reg pcpi_ready
+);
+
+
+
+// Register to hold the LFSR state
+reg [31:0] lfsr_reg;
+
+// Check if the current instruction is the custom LFSR instruction
+wire is_lfsr_insn = (pcpi_insn[6:0] == 7'h0B) && (pcpi_insn[14:12] == 3'b000) && (pcpi_insn[31:25] == 7'h01);
+
+// The next state of the LFSR is calculated combinationally
+wire feedback_bit = lfsr_reg[31] ^ lfsr_reg[21] ^ lfsr_reg[1] ^ lfsr_reg[0];
+wire [31:0] lfsr_next = {feedback_bit, lfsr_reg[31:1]};
+
+// Combinatorial outputs for the PCPI handshake
+always @* begin
+    pcpi_wr = 1'b0;
+    pcpi_rd = 32'b0;
+    pcpi_ready = 1'b0;
+    pcpi_wait = 1'b0;
+    if (pcpi_valid && is_lfsr_insn) begin
+        pcpi_wr = 1'b1;
+        pcpi_rd = lfsr_reg;  // Return the current state
+        pcpi_ready = 1'b1;
+    end
+end
+
+// Clocked logic for state updates
+always @(posedge clk) begin
+    if (!resetn) begin
+        // Initialize the LFSR to a non-zero seed on reset
+        lfsr_reg <= 32'hACE1F00D;
+    end else if (pcpi_valid && is_lfsr_insn) begin
+        // Update the LFSR state after returning the current value
+        if (pcpi_rs1 != 0) begin
+            lfsr_reg <= pcpi_rs1;
+        end else begin
+            lfsr_reg <= lfsr_next;
+        end
+    end
+end
+
 endmodule

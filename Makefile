@@ -100,7 +100,7 @@ synth.v: picorv32.v scripts/yosys/synth_sim.ys
 	yosys -qv3 -l synth.log scripts/yosys/synth_sim.ys
 
 firmware/firmware.hex: firmware/firmware.bin firmware/makehex.py
-	$(PYTHON) firmware/makehex.py $< 32768 > $@
+	$(PYTHON) firmware/makehex.py $< 131072 > $@
 
 firmware/firmware.bin: firmware/firmware.elf
 	$(TOOLCHAIN_PREFIX)objcopy -O binary $< $@
