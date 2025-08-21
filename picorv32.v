@@ -64,7 +64,8 @@ module picorv32 #(
 	parameter [31:0] PROGADDR_RESET = 32'h 0000_0000,
 	parameter [31:0] PROGADDR_IRQ = 32'h 0000_0010,
 	parameter [31:0] STACKADDR = 32'h ffff_ffff,
-	parameter [ 0:0] ENABLE_LFSR = 1
+	parameter [ 0:0] ENABLE_LFSR = 1,
+	parameter [ 0:0] ENABLE_CONV = 1
 ) (
 	input clk, resetn,
 	output reg trap,
@@ -145,7 +146,7 @@ module picorv32 #(
 	localparam integer regfile_size = (ENABLE_REGS_16_31 ? 32 : 16) + 4*ENABLE_IRQ*ENABLE_IRQ_QREGS;
 	localparam integer regindex_bits = (ENABLE_REGS_16_31 ? 5 : 4) + ENABLE_IRQ*ENABLE_IRQ_QREGS;
 
-	localparam WITH_PCPI = ENABLE_PCPI || ENABLE_MUL || ENABLE_FAST_MUL || ENABLE_DIV || ENABLE_LFSR;
+	localparam WITH_PCPI = ENABLE_PCPI || ENABLE_MUL || ENABLE_FAST_MUL || ENABLE_DIV || ENABLE_LFSR || ENABLE_CONV;
 
 	localparam [35:0] TRACE_BRANCH = {4'b 0001, 32'b 0};
 	localparam [35:0] TRACE_ADDR   = {4'b 0010, 32'b 0};
@@ -248,6 +249,11 @@ module picorv32 #(
 	wire [31:0] pcpi_lfsr_rd;
 	wire pcpi_lfsr_wait;
 	wire pcpi_lfsr_ready;
+	
+	wire pcpi_conv_wr;
+	wire [31:0] pcpi_conv_rd;
+	wire pcpi_conv_wait;
+	wire pcpi_conv_ready;
 
 
 	reg        pcpi_int_wr;
@@ -321,12 +327,26 @@ module picorv32 #(
 			.pcpi_ready(pcpi_lfsr_ready)
 		);
 	endgenerate
+	generate
+		pcpi_fp_conv pcpi_conv (
+			.clk(clk),
+			.resetn(resetn),
+			.pcpi_valid(pcpi_valid),
+			.pcpi_insn(pcpi_insn),
+			.pcpi_rs1(pcpi_rs1),
+			.pcpi_rs2(pcpi_rs2),
+			.pcpi_wr(pcpi_conv_wr),
+			.pcpi_rd(pcpi_conv_rd),
+			.pcpi_wait(pcpi_conv_wait),
+			.pcpi_ready(pcpi_conv_ready)
+		);
+	endgenerate
 
 	always @* begin
 		pcpi_int_wr = 0;
 		pcpi_int_rd = 32'bx;
-		pcpi_int_wait  = |{ENABLE_PCPI && pcpi_wait,  (ENABLE_MUL || ENABLE_FAST_MUL) && pcpi_mul_wait,  ENABLE_DIV && pcpi_div_wait, pcpi_lfsr_wait};
-		pcpi_int_ready = |{ENABLE_PCPI && pcpi_ready, (ENABLE_MUL || ENABLE_FAST_MUL) && pcpi_mul_ready, ENABLE_DIV && pcpi_div_ready, pcpi_lfsr_ready};
+		pcpi_int_wait  = |{ENABLE_PCPI && pcpi_wait,  (ENABLE_MUL || ENABLE_FAST_MUL) && pcpi_mul_wait,  ENABLE_DIV && pcpi_div_wait, pcpi_lfsr_wait, pcpi_conv_wait};
+		pcpi_int_ready = |{ENABLE_PCPI && pcpi_ready, (ENABLE_MUL || ENABLE_FAST_MUL) && pcpi_mul_ready, ENABLE_DIV && pcpi_div_ready, pcpi_lfsr_ready, pcpi_conv_ready};
 
 		(* parallel_case *)
 		case (1'b1)
@@ -345,6 +365,10 @@ module picorv32 #(
 			pcpi_lfsr_ready: begin
     				pcpi_int_wr = pcpi_lfsr_wr;
     				pcpi_int_rd = pcpi_lfsr_rd;
+			end
+			pcpi_conv_ready: begin
+    				pcpi_int_wr = pcpi_conv_wr;
+    				pcpi_int_rd = pcpi_conv_rd;
 			end
 		endcase
 	end
@@ -656,7 +680,7 @@ module picorv32 #(
 	reg instr_getq, instr_setq, instr_retirq, instr_maskirq, instr_waitirq, instr_timer;
 	reg instr_maddsq;
 	reg instr_lfsr;
-	
+	reg instr_conv;
 	wire instr_trap;
 
 	reg [regindex_bits-1:0] decoded_rd, decoded_rs1;
@@ -1085,6 +1109,7 @@ module picorv32 #(
 
 			instr_maddsq  <= mem_rdata_q[6:0] == 7'b0001011 && mem_rdata_q[14:12] == 3'b001 && mem_rdata_q[31:25] == 7'b0100001;
 			instr_lfsr <= mem_rdata_q[6:0] == 7'b0001011 && mem_rdata_q[14:12] == 3'b000 && mem_rdata_q[31:25] == 7'b0000001;
+			instr_conv <= mem_rdata_q[6:0] == 7'b0001111 && mem_rdata_q[14:12] == 3'b000 && mem_rdata_q[31:25] == 7'b0000001;
 			
 			instr_rdcycle  <= ((mem_rdata_q[6:0] == 7'b1110011 && mem_rdata_q[31:12] == 'b11000000000000000010) ||
 			                   (mem_rdata_q[6:0] == 7'b1110011 && mem_rdata_q[31:12] == 'b11000000000100000010)) && ENABLE_COUNTERS;
@@ -1594,7 +1619,7 @@ module picorv32 #(
 
 				(* parallel_case *)
 				case (1'b1)
-					(CATCH_ILLINSN || WITH_PCPI) && (instr_trap || instr_lfsr): begin
+					(CATCH_ILLINSN || WITH_PCPI) && (instr_trap || instr_lfsr || instr_conv): begin
 						if (WITH_PCPI) begin
 							`debug($display("LD_RS1: %2d 0x%08x", decoded_rs1, cpuregs_rs1);)
 							reg_op1 <= cpuregs_rs1;
@@ -3114,3 +3139,156 @@ always @(posedge clk) begin
 end
 
 endmodule
+
+
+module pcpi_fp_conv (
+    input  wire        clk,
+    input  wire        resetn,
+    input  wire        pcpi_valid,
+    input  wire [31:0] pcpi_insn,
+    input  wire [31:0] pcpi_rs1,   // FP32
+    input  wire [31:0] pcpi_rs2,   // LFSR (uniform random)
+    output reg         pcpi_wr,
+    output reg  [31:0] pcpi_rd,
+    output reg         pcpi_wait,
+    output reg         pcpi_ready
+);
+
+    // ---- Instruction decode (custom-1) ----
+    wire is_conv_insn;
+    assign is_conv_insn =
+        (pcpi_insn[6:0]   == 7'b0001111) &&   // custom-1
+        (pcpi_insn[14:12] == 3'b001)      &&  // funct3
+        (pcpi_insn[31:25] == 7'b0000001);     // funct7
+
+    // ---- FP32 fields ----
+    wire        fp_sign = pcpi_rs1[31];
+    wire [7:0]  fp_exp  = pcpi_rs1[30:23];
+    wire [22:0] fp_frac = pcpi_rs1[22:0];
+
+    // Special cases
+    wire is_zero = (fp_exp == 8'd0)   && (fp_frac == 23'd0);
+    wire is_inf  = (fp_exp == 8'd255) && (fp_frac == 23'd0);
+    wire is_nan  = (fp_exp == 8'd255) && (fp_frac != 23'd0);
+
+    // Subnormal detection: exp==0 & frac!=0 -> no hidden 1, exponent = -126
+    wire is_sub  = (fp_exp == 8'd0) && (fp_frac != 23'd0);
+
+    // 24-bit significand (unsigned magnitude)
+    wire [23:0] significand = is_sub ? {1'b0, fp_frac} : {1'b1, fp_frac};
+
+    // Unbiased exponent (signed). For subnormals use -126.
+    wire signed [9:0] exp_unbiased = is_sub ? -10'sd126 : ($signed({1'b0, fp_exp}) - 10'sd127);
+
+    // Compute shift for total_scaled = |x| * 2^32
+    wire signed [10:0] shift_total = exp_unbiased + 10'sd9;
+
+    // 64-bit workspace to hold shifts safely
+    reg  [63:0] total_scaled;  
+    reg  [63:0] sh_src;
+    reg  [5:0]  sh_amt;        
+    reg         shift_left;
+    reg  signed [10:0] shift_total_neg;  // <-- added temp for -shift_total
+
+    // Integer and fractional pieces
+    wire [31:0] frac32 = total_scaled[31:0];
+    wire [31:0] int32  = total_scaled[63:32];
+
+    // Rounding decision
+    wire [31:0] lfsr = pcpi_rs2;
+    wire        round_up = (frac32 > lfsr);
+
+    // 4-bit magnitude and signed result
+    reg  [3:0]  n_mag;       
+    reg  [3:0]  n_mag_plus;  
+    reg  [3:0]  n_sat;       
+    reg  [3:0]  n_signed4;   
+    reg  [31:0] result_sext; 
+
+    // ---- Shifter for total_scaled ----
+    always @(*) begin
+        // Defaults
+        pcpi_wr    = 1'b0;
+        pcpi_rd    = 32'd0;
+        pcpi_wait  = 1'b0;
+        pcpi_ready = 1'b0;
+
+        // Prepare shift
+        sh_src     = {40'd0, significand}; 
+        shift_left = (shift_total >= 0);
+
+        // Clip magnitude to 0..63
+        if (shift_left) begin
+            if (shift_total[5:0] > 6'd63) 
+                sh_amt = 6'd63; 
+            else 
+                sh_amt = shift_total[5:0];
+        end else begin
+            // FIXED: compute negation first, then slice
+            shift_total_neg = -shift_total;
+            if (shift_total_neg[5:0] > 6'd63) 
+                sh_amt = 6'd63; 
+            else 
+                sh_amt = shift_total_neg[5:0];
+        end
+
+        // Do the shift
+        if (is_zero) begin
+            total_scaled = 64'd0;
+        end else if (shift_left) begin
+            total_scaled = sh_src << sh_amt;
+        end else begin
+            total_scaled = sh_src >> sh_amt;
+        end
+
+        // Default outputs
+        result_sext = 32'd0;
+
+        if (pcpi_valid && is_conv_insn) begin
+            // Handle specials
+            if (is_nan || is_zero) begin
+                n_mag      = 4'd0;
+                n_mag_plus = 4'd0;
+                n_sat      = 4'd0;
+            end else if (is_inf) begin
+                n_mag      = 4'd7;
+                n_mag_plus = 4'd7;
+                n_sat      = 4'd7;
+            end else begin
+                // Base magnitude = min(int32, 7)
+                if (int32[31:3] != 29'd0) begin
+                    n_mag = 4'd7;
+                end else begin
+                    n_mag = int32[3:0]; 
+                    if (n_mag > 4'd7) n_mag = 4'd7;
+                end
+
+                // Stochastic round-up
+                if ((n_mag < 4'd7) && round_up)
+                    n_mag_plus = n_mag + 4'd1;
+                else
+                    n_mag_plus = n_mag;
+
+                // Final saturation
+                if (n_mag_plus > 4'd7) n_sat = 4'd7; 
+                else n_sat = n_mag_plus;
+            end
+
+            // Apply sign and sign-extend
+            if (fp_sign) begin
+                n_signed4  = (~n_sat + 4'd1);
+                result_sext = {{28{n_signed4[3]}}, n_signed4};
+            end else begin
+                n_signed4  = n_sat;
+                result_sext = {28'd0, n_signed4};
+            end
+
+            pcpi_rd    = result_sext;
+            pcpi_wr    = 1'b1;
+            pcpi_ready = 1'b1;
+        end
+    end
+
+endmodule
+
+

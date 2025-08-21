@@ -306,7 +306,7 @@ module axi4_memory #(
 
 	output reg        tests_passed
 );
-	reg [31:0]   memory [0:128*1024/4-1] /* verilator public */;
+	reg [31:0]   memory [0:65535] /* verilator public */;
 	reg verbose;
 	initial verbose = $test$plusargs("verbose") || VERBOSE;
 
