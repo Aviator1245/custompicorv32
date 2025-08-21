@@ -7,7 +7,7 @@ int len = sizeof(weights) / sizeof(weights[0]);
 
 void lauda(void)
 {
-    int iterations = 1000;  // number of stochastic rounding trials per weight
+    int iterations = 5000;  // number of stochastic rounding trials per weight
 
     // Find max value for scaling
     float res = 0;
