@@ -8,7 +8,7 @@ ICARUS_SUFFIX =
 IVERILOG = iverilog$(ICARUS_SUFFIX)
 VVP = vvp$(ICARUS_SUFFIX)
 
-FIRMWARE_OBJS = firmware/custom_start.o firmware/print.o firmware/lauda.o firmware/stats.o
+FIRMWARE_OBJS = firmware/custom_start.o firmware/print.o firmware/custom.o firmware/stats.o firmware/string.o
 TOOLCHAIN_PREFIX = $(RISCV_GNU_TOOLCHAIN_INSTALL_PREFIX)/bin/riscv64-unknown-elf-
 COMPRESSED_ISA = C
 
@@ -22,7 +22,7 @@ test: testbench.vvp firmware/firmware.hex
 # Icarus targets
 # ----------------------
 testbench.vvp: testbench.v picorv32.v
-	$(IVERILOG) -o $@ $(subst C,-DCOMPRESSED_ISA,$(COMPRESSED_ISA)) $^
+	$(IVERILOG) -g2012 -o $@ $(subst C,-DCOMPRESSED_ISA,$(COMPRESSED_ISA)) $^
 	chmod -x $@
 
 # ----------------------
@@ -38,7 +38,7 @@ firmware/firmware.bin: firmware/firmware.elf
 firmware/firmware.elf: $(FIRMWARE_OBJS) firmware/sections.lds
 	$(TOOLCHAIN_PREFIX)gcc -Os -mabi=ilp32 -march=rv32im$(subst C,c,$(COMPRESSED_ISA)) \
 		-ffreestanding -nostdlib -o $@ \
-		-Wl,--build-id=none,-Bstatic,-T,firmware/sections.lds,-Map,firmware/lauda.map,--strip-debug \
+		-Wl,--build-id=none,-Bstatic,-T,firmware/sections.lds,-Map,firmware/custom.map,--strip-debug \
 		$(FIRMWARE_OBJS) -lgcc
 	chmod -x $@
 
@@ -52,7 +52,10 @@ firmware/stats.o: firmware/stats.c
 	$(TOOLCHAIN_PREFIX)gcc -c -Os -mabi=ilp32 -march=rv32im$(subst C,c,$(COMPRESSED_ISA)) -o $@ $<
 
 
-firmware/lauda.o: firmware/lauda.c firmware/instr.h
+firmware/custom.o: firmware/custom.c firmware/instr.h
+	$(TOOLCHAIN_PREFIX)gcc -c -Os -mabi=ilp32 -march=rv32im$(subst C,c,$(COMPRESSED_ISA)) -o $@ $<
+	
+firmware/string.o: firmware/string.c
 	$(TOOLCHAIN_PREFIX)gcc -c -Os -mabi=ilp32 -march=rv32im$(subst C,c,$(COMPRESSED_ISA)) -o $@ $<
 
 # ----------------------
