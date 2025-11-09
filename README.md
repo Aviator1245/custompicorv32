@@ -18,26 +18,25 @@ It’s a hardware-assisted quantization module designed to accelerate **TinyML a
 
 
 ---
-
 ## 🧩 Project Structure
 
+```text
 custompicorv32/
 │
-├── pcpi_fp_conv.v # PCPI module for FP32→INT4 conversion
-├── picorv32.v # Modified PicoRV32 core supporting the new instruction
+├── pcpi_fp_conv.v          # PCPI module for FP32→INT4 conversion
+├── picorv32.v              # Modified PicoRV32 core supporting the new instruction
 │
 ├── firmware/
-│ ├── lauda.c # Benchmark firmware (software vs hardware comparison)
-│ ├── instr.h # Inline assembly for the custom instruction (.insn)
-│ ├── print.c/.h # UART print helpers
-│ ├── stats.c/.h # Benchmark utility functions
-│ ├── sections.lds # Linker script
-│ ├── makehex.py # Converts firmware binary to HEX format
+│   ├── lauda.c             # Benchmark firmware (software vs hardware comparison)
+│   ├── instr.h             # Inline assembly for the custom instruction (.insn)
+│   ├── print.c/.h          # UART print helpers
+│   ├── stats.c/.h          # Benchmark utility functions
+│   ├── sections.lds        # Linker script
+│   ├── makehex.py          # Converts firmware binary to HEX format
 │
-├── testbench.v # Verilog testbench for simulation
-├── Makefile # Build and simulation automation
-└── README.md # This file
-
+├── testbench.v             # Verilog testbench for simulation
+├── Makefile                # Build and simulation automation
+└── README.md               # This file
 
 ---
 
