@@ -60,3 +60,5 @@ make test
 ```
 
 After building, the simulation runs a benchmark comparing software and hardware quantization.
+
+Custom FP32 values can be tested by modifying the `input_bits_array[]` in `firmware/lauda.c` and rebuilding the project using `make test`.
