@@ -1,4 +1,4 @@
-# 🧮 Custom PicoRV32: FP32→INT4 Stochastic Quantization Co-Processor
+# Custom PicoRV32: FP32→INT4 Stochastic Quantization Co-Processor
 
 This project modifies the **PicoRV32 RISC-V core** to include a **custom PCPI co-processor** that performs **FP32 to INT4 quantization** using **stochastic rounding**.  
 It’s a hardware-assisted quantization module designed to accelerate **TinyML and edge AI** workloads.
@@ -42,6 +42,15 @@ custompicorv32/
 ⚙️ Usage
 
 Requires a working RISC-V GCC toolchain and Icarus Verilog (or Verilator).
+⚙️ Usage
+
+Requires:
+
+RISC-V GCC Toolchain 
+The project currently uses riscv64-unknown-elf  (Any custom riscv32 or 64 bit toolchain will suffice ...Change the Makefile to fit your toolchain path accordingly ) 
+Icarus Verilog or Verilator
+
+Python 3
 ```bash
 git clone https://github.com/Aviator1245/custompicorv32.git
 cd custompicorv32
