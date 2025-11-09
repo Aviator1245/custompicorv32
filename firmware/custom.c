@@ -34,7 +34,7 @@ void lauda(void) {
     print_str("--- Running Optimized Software Benchmark ---\n");
     start_cycles = read_cycle();
 
-    volatile int result_buffer; // Prevent compiler optimization
+    volatile int result_buffer; 
 
     for (int i = 0; i < NUM_CONVERSIONS; i++) {
         // 1. Reinterpret bits as float (this is just a move, no FP math)
