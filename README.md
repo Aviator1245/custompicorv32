@@ -16,8 +16,8 @@ It’s a hardware-assisted quantization module designed to accelerate **TinyML a
   - Handles zeros, NaNs, infinities, and subnormal values.
   - Saturates INT4 results in the range [-7, 7].
 
-
 ---
+
 ## 🧩 Project Structure
 
 ```text
@@ -37,17 +37,3 @@ custompicorv32/
 ├── testbench.v             # Verilog testbench for simulation
 ├── Makefile                # Build and simulation automation
 └── README.md               # This file
-
----
-
-## ⚙️ Usage
-
-Requires a working **RISC-V GCC toolchain** and **Icarus Verilog** (or Verilator).
-
-```bash
-git clone https://github.com/Aviator1245/custompicorv32.git
-cd custompicorv32
-make test
-
-After building, the simulation runs a benchmark comparing software and hardware quantization.
-
