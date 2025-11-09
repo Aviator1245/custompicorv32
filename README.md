@@ -43,7 +43,7 @@ custompicorv32/
 
 - **RISC-V GCC Toolchain**  
   The Makefile is configured for the `riscv64-unknown-elf` toolchain.  
-  If you use a different prefix (e.g. `riscv32-unknown-elf`), modify the Makefile's  accordingly.  
+  If you use a different prefix (e.g. `riscv32-unknown-elf`), modify the Makefile's RISCV_GNU_TOOLCHAIN_INSTALL_PREFIX and TOOLCHAIN_PREFIX accordingly.  
   You can install or build one from the [RISC-V GNU Toolchain](https://github.com/riscv-collab/riscv-gnu-toolchain).
 
 - **Simulator**  
