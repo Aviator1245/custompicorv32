@@ -43,7 +43,7 @@ custompicorv32/
 
 - **RISC-V GCC Toolchain**  
   The Makefile is configured for the `riscv64-unknown-elf` toolchain.  
-  If you use a different prefix (e.g. `riscv32-unknown-elf`), modify the Makefile accordingly.  
+  If you use a different prefix (e.g. `riscv32-unknown-elf`), modify the Makefile's  accordingly.  
   You can install or build one from the [RISC-V GNU Toolchain](https://github.com/riscv-collab/riscv-gnu-toolchain).
 
 - **Simulator**  
@@ -61,4 +61,6 @@ make test
 
 After building, the simulation runs a benchmark comparing software and hardware quantization.
 
-Custom FP32 values can be tested by modifying the `input_bits_array[]` in `firmware/lauda.c` and rebuilding the project using `make test`.
+Custom FP32 inputs (e.g., neural network weights or random values) can be tested by modifying the initialization of `input_bits_array[]` in `firmware/custom.c` and rebuilding using: `make test`
+
+
