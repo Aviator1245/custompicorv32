@@ -14,7 +14,7 @@ It’s a hardware-assisted quantization module designed to accelerate **TinyML a
 
 - **Special Case Handling**
   - Handles zeros, NaNs, infinities, and subnormal values.
-  - Saturates INT4 results in the range [-7, 7].
+  - Saturates INT4 results in the range [-7, 8].
 
 ---
 
