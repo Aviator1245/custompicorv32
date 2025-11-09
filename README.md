@@ -41,24 +41,17 @@ custompicorv32/
 
 ⚙️ Usage
 Requirements
-
-RISC-V GCC Toolchain
-
-The Makefile is configured for the riscv64-unknown-elf toolchain.
-
-If you use a different prefix (e.g. riscv32-unknown-elf), modify the Makefile accordingly.
-
-You can install or build one from the RISC-V GNU Toolchain
+       -RISC-V GCC Toolchain
+       -The Makefile is configured for the riscv64-unknown-elf toolchain.
+       -If you use a different prefix (e.g. riscv32-unknown-elf), modify the Makefile accordingly.
+       -You can install or build one from the RISC-V GNU Toolchain
 
 
 Simulator
-
-Icarus Verilog
- or Verilator
+       - Icarus Verilog or Verilator
 
 Python 3
-
-Required for converting firmware binaries into HEX format.
+      - Required for converting firmware binaries into HEX format.
 
 ```bash
 git clone https://github.com/Aviator1245/custompicorv32.git
