@@ -30,7 +30,7 @@ custompicorv32/
 ├── picorv32.v              # Modified PicoRV32 core supporting the new instruction
 │
 ├── firmware/
-│   ├── lauda.c             # Benchmark firmware (software vs hardware comparison)
+│   ├── custom.c             # Benchmark firmware (software vs hardware comparison)
 │   ├── instr.h             # Inline assembly for the custom instruction (.insn)
 │   ├── print.c/.h          # UART print helpers
 │   ├── stats.c/.h          # Benchmark utility functions
