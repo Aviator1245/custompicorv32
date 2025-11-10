@@ -1,9 +1,10 @@
 # Custom PicoRV32: FP32→INT4 Stochastic Quantization Co-Processor
 
 This project modifies the **PicoRV32 RISC-V core** to include a **custom PCPI co-processor** that performs **FP32 to INT4 quantization** using **stochastic rounding**.  
-The Coprocessor without the PCPI handshake latency gets it done in 2 cycles while it takes up to 50-100 cycles on a optimized software randomized rounding 
-`With the PCPI overlay you could expect 10-15 cycles for the instruction set to be done 
-`The project's goal is to  accelerate **TinyML and edge AI** workloads.
+The co-processor without the PCPI handshake latency gets it done in 2 cycles, while it takes up to 50–100 cycles on an optimized software randomized rounding.  
+With the PCPI overlay, you can expect 10–15 cycles for the instruction set to complete.  
+The project's goal is to accelerate **TinyML and edge AI** workloads.  
+
 
 ---
 
