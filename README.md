@@ -26,10 +26,10 @@ The project's goal is to accelerate **TinyML and edge AI** workloads.
 ```text
 custompicorv32/
 │          
-├── picorv32.v              # Modified PicoRV32 core supporting the new instruction ( Included PCPI module for FP32→INT4 conversion )
+├── picorv32.v    # Modified PicoRV32 core supporting the new instruction ( Included PCPI module for FP32→INT4 conversion )
 │
 ├── firmware/
-│   ├── custom.c             # Benchmark firmware (software vs hardware comparison)
+│   ├── custom.c            # Benchmark firmware (software vs hardware comparison)
 │   ├── instr.h             # Inline assembly for the custom instruction (.insn)
 │   ├── print.c/.h          # UART print helpers
 │   ├── stats.c/.h          # Benchmark utility functions
