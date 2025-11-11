@@ -25,9 +25,8 @@ The project's goal is to accelerate **TinyML and edge AI** workloads.
 
 ```text
 custompicorv32/
-│
-├── pcpi_fp_conv.v          # PCPI module for FP32→INT4 conversion
-├── picorv32.v              # Modified PicoRV32 core supporting the new instruction
+│          
+├── picorv32.v              # Modified PicoRV32 core supporting the new instruction ( Included PCPI module for FP32→INT4 conversion )
 │
 ├── firmware/
 │   ├── custom.c             # Benchmark firmware (software vs hardware comparison)
