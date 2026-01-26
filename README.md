@@ -8,7 +8,7 @@ The project's goal is to accelerate **TinyML and edge AI** workloads.
 
 ---
 
-## 🚀 Features
+## Features
 
 - **Custom PCPI Instruction**
   - Extends the `custom-1` opcode space with a new FP32→INT4 instruction.
