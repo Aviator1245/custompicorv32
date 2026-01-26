@@ -31,7 +31,7 @@ custompicorv32/
 ├── firmware/
 │   ├── custom.c            # Benchmark firmware (software vs hardware comparison)
 │   ├── instr.h             # Inline assembly for the custom instruction (.insn)
-│   ├── print.c/.h          # UART print helpers
+│   ├── print.c/.h          # UART print helpers (ie. print fns to print output in terminal)
 │   ├── stats.c/.h          # Benchmark utility functions
 │   ├── sections.lds        # Linker script
 │   ├── makehex.py          # Converts firmware binary to HEX format
