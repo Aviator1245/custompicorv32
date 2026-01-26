@@ -12,7 +12,7 @@ static inline uint32_t read_cycle(void) {
 float weights[NUM_CONVERSIONS];
 uint32_t input_bits_array[NUM_CONVERSIONS];
 
-void lauda(void) {
+void custom(void) {
     uint32_t start_cycles, end_cycles, cycle_count;
 
     float scale = 7.0f/23.12f ; 

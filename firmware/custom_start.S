@@ -1,6 +1,6 @@
     .section .text
     .globl _start
-    .globl lauda
+    .globl custom
     .globl stats
 
 _start:
@@ -8,8 +8,8 @@ _start:
     lui sp, %hi(stack_top)
     addi sp, sp, %lo(stack_top)
 
-    # Call lauda function
-    jal ra, lauda
+    # Call custom function
+    jal ra, custom
 
 #ifdef ENABLE_STATS
 	/* call stats C code */

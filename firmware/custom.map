@@ -140,7 +140,7 @@ Linker script and memory map
                 0x00000056                print_dec
                 0x0000008c                print_hex
  .text          0x000000b2      0x16e firmware/custom.o
-                0x000000b2                lauda
+                0x000000b2                custom
  .text          0x00000220       0xe6 firmware/stats.o
                 0x00000296                stats
  .text          0x00000306       0x12 firmware/string.o

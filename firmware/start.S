@@ -37,8 +37,8 @@
 	.global hard_rem
 	.global hard_remu
 	.global stats
-	.global lauda
-
+	.global custom
+	
 reset_vec:
 	// no more than 16 bytes here !
 	picorv32_waitirq_insn(zero)
@@ -384,7 +384,7 @@ start:
 
 	/* call hello C code */
 	jal ra,hello
-	jal ra,lauda
+	jal ra,custom
 #endif
 
 	/* running tests from riscv-tests */
