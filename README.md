@@ -13,7 +13,7 @@ The project's goal is to accelerate **TinyML and edge AI** workloads.
 - **Custom PCPI Instruction**
   - Extends the `custom-1` opcode space with a new FP32→INT4 instruction.
   - Converts 32-bit IEEE-754 floating-point numbers into signed 4-bit integers.
-  - Performs stochastic rounding using an integrated LFSR RNG.
+  - Performs stochastic rounding using an integrated 32 bit LFSR Random number generator . 
 
 - **Special Case Handling**
   - Handles zeros, NaNs, infinities, and subnormal values.
